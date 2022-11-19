@@ -1,16 +1,12 @@
 package com.shopping.entity;
 
 import javax.persistence.Entity;  
-import lombok.Getter;
-import lombok.Setter;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Getter
-@Setter
 @Table(name = "Auth")
 public class Auth {
 	

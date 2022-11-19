@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shopping.entity.Auth;
+import com.shopping.exception.AuthRequestException;
 import com.shopping.service.AuthServiceImpl;
 
 @RestController
@@ -18,11 +19,15 @@ public class AuthController {
 	AuthServiceImpl service;
 	
 	@PostMapping(path="/register",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
-	public String add(@RequestBody Auth auth) {
+	public String add(@RequestBody Auth auth) throws AuthRequestException{
 		service.register(auth);
-		System.out.println(auth.getUserName()+" "+auth.getPassword());
 		return "Successfully reistered in the APP";
 		
+	}
+	
+	@RequestMapping("/hello")
+	public String hi() {
+		return"hi";
 	}
 
 }
