@@ -6,5 +6,5 @@ public interface AuthService {
 	
 	public Auth register(Auth auth);
 	public Auth login(Auth auth);
-	//public Auth findUserByUserName(Auth auth);
+	public String findUserByUserName(Auth auth);
 }

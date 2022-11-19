@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+
+import com.shopping.AuthRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Auth;
 import com.shopping.exception.AuthRequestException;
@@ -35,6 +37,11 @@ public class AuthServiceImpl implements AuthService {
 		 * System.out.println(name); }
 		 */
 		
+		String userNameCheck = findUserByUserName(auth);
+		
+		if(!(userNameCheck == null) && userNameCheck.equalsIgnoreCase(auth.getUserName())){
+			throw new AuthRequestException(constants.UsernameAlreadyExistsError);
+		}
 	
 		/*
 		 * if(name.equals(auth.getUserName()) && !name.isEmpty()) { throw new
@@ -46,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
 		throw new AuthRequestException(constants.PasswordLengthERROR);
 		}
 		log.info("Successfully registered");
-	     jdbcTemplate.update("INSERT INTO Auth(id, user_name, password) VALUES (?,?,?)", new Object[] {auth.getId(), auth.getUserName(), auth.getPassword()});
+	     jdbcTemplate.update(constants.RegisterQuery, new Object[] {auth.getId(), auth.getUserName(), auth.getPassword()});
 	     return auth;
 		
 		
@@ -58,11 +65,23 @@ public class AuthServiceImpl implements AuthService {
 		return null;
 	}
 
-	/*
-	 * public Auth findUserByUserName(Auth auth) { Auth o = null; try { o =
-	 * jdbcTemplate.queryForObject("select * from Auth where id = ?", new Object[]
-	 * {auth.getId()}, new AuthMapper()); } catch(Exception e) { } return o; }
-	 */
 	
+	  public String findUserByUserName(Auth auth) {
+		  Auth o = null; 
+		  
+		  String f = "select * from Auth where user_name = "+"'"+auth.getUserName()+"'";
+		 
+	// o =  jdbcTemplate.queryForObject("select * from Auth where user_name = ?", new Object[]
+	  //{auth.getUserName()}, new AuthRowMapper()); 
+	 List<Auth> a = jdbcTemplate.query(f, new AuthRowMapper());
+		  
+	 if(a.isEmpty()) {
+		 return null;
+	 }
+		   return o.getUserName(); 
+		  
+		   }
+	 
+  
 
 }
