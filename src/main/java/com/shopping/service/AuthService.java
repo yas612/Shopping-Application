@@ -4,7 +4,8 @@ import com.shopping.entity.Auth;
 
 public interface AuthService {
 	
-	public Auth register(Auth auth);
-	public Auth login(Auth auth);
-	public String findUserByUserName(Auth auth);
+	public void register(Auth auth);
+	public Boolean login(Auth auth);
+	public Auth findUserByUserName(Auth auth);
+	
 }

@@ -19,15 +19,20 @@ public class AuthController {
 	AuthServiceImpl service;
 	
 	@PostMapping(path="/register",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
-	public String add(@RequestBody Auth auth) throws AuthRequestException{
+	public String registerInApplication(@RequestBody Auth auth) throws AuthRequestException{
 		service.register(auth);
 		return "Successfully reistered in the APP";
 		
 	}
 	
-	@RequestMapping("/hello")
-	public String hi() {
-		return"hi";
+	@PostMapping(path="/login",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
+	public String loginToApplication(@RequestBody Auth auth) throws AuthRequestException{
+		Boolean response = service.login(auth);
+		if(response)
+			return "Login successful";
+		else
+		return "Login failed check the entered User Name and Password";
+		
 	}
 
 }

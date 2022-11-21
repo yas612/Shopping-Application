@@ -1,14 +1,12 @@
 package com.shopping.service;
 
-import java.util.ArrayList;
-import java.util.List;
 
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
 import com.shopping.AuthRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Auth;
@@ -29,56 +27,61 @@ public class AuthServiceImpl implements AuthService {
 	private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
 	@Override
-	public Auth register(Auth auth) {
+	public void register(Auth auth) {
+			
+		Auth authCheck = findUserByUserName(auth);
 		
 		/*
-		 * Auth userCheck = findUserByUserName(auth); String name =
-		 * userCheck.getUserName(); System.out.println(name); if(name == null) {
-		 * System.out.println(name); }
-		 */
-		
-		String userNameCheck = findUserByUserName(auth);
-		
-		if(!(userNameCheck == null) && userNameCheck.equalsIgnoreCase(auth.getUserName())){
-			throw new AuthRequestException(constants.UsernameAlreadyExistsError);
-		}
-	
-		/*
-		 * if(name.equals(auth.getUserName()) && !name.isEmpty()) { throw new
+		 * if((!(authCheck.getUserName() == null)) &&
+		 * (authCheck.getUserName().equals(auth.getUserName()))){ throw new
 		 * AuthRequestException(constants.UsernameAlreadyExistsError); }
 		 */
+		if(!(authCheck==null)) {
+			throw new AuthRequestException(constants.UsernameAlreadyExistsError);
+		}
 		
+		if(authCheck==null) {
+	
 		if(auth.getPassword().length()<7)
 		{
 		throw new AuthRequestException(constants.PasswordLengthERROR);
 		}
-		log.info("Successfully registered");
+		
 	     jdbcTemplate.update(constants.RegisterQuery, new Object[] {auth.getId(), auth.getUserName(), auth.getPassword()});
-	     return auth;
+	     log.info("Successfully registered");
+		}
 		
 		
 	}
 
 	@Override
-	public Auth login(Auth auth) {
-		// TODO Auto-generated method stub
-		return null;
+	public Boolean login(Auth auth) {
+		
+		Auth authLogin = findUserByUserName(auth);
+		if(!(authLogin == null)) {
+		String fetchedUserName = authLogin.getUserName();
+		String fetchedPassWord = authLogin.getPassword();
+		 
+		if((auth.getUserName().equals(fetchedUserName)) && (auth.getPassword().equals(fetchedPassWord)))
+		{
+			return true;
+		}
+		}
+		return false;
+		
 	}
 
 	
-	  public String findUserByUserName(Auth auth) {
-		  Auth o = null; 
+	  public Auth findUserByUserName(Auth auth) {
 		  
-		  String f = "select * from Auth where user_name = "+"'"+auth.getUserName()+"'";
-		 
-	// o =  jdbcTemplate.queryForObject("select * from Auth where user_name = ?", new Object[]
-	  //{auth.getUserName()}, new AuthRowMapper()); 
-	 List<Auth> a = jdbcTemplate.query(f, new AuthRowMapper());
+		  String userNameQuery = constants.UserNameExtractQuery+"'"+auth.getUserName()+"'";
+		
+	 List<Auth> FetchedAuthObject = jdbcTemplate.query(userNameQuery, new AuthRowMapper());
 		  
-	 if(a.isEmpty()) {
-		 return null;
+	 if(FetchedAuthObject.isEmpty()) {
+		return null;
 	 }
-		   return o.getUserName(); 
+		   return FetchedAuthObject.get(0); 
 		  
 		   }
 	 
