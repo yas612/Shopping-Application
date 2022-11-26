@@ -31,18 +31,17 @@ public class AuthServiceImpl implements AuthService {
 			
 		Auth authCheck = findUserByUserName(auth);
 		
-		/*
-		 * if((!(authCheck.getUserName() == null)) &&
-		 * (authCheck.getUserName().equals(auth.getUserName()))){ throw new
-		 * AuthRequestException(constants.UsernameAlreadyExistsError); }
-		 */
 		if(!(authCheck==null)) {
 			throw new AuthRequestException(constants.UsernameAlreadyExistsError);
 		}
 		
 		if(authCheck==null) {
+			
+			if(auth.getUserName().length()<6) {
+				throw new AuthRequestException(constants.UserNameLengthERROR);
+			}
 	
-		if(auth.getPassword().length()<7)
+		if(auth.getPassword().length()<8)
 		{
 		throw new AuthRequestException(constants.PasswordLengthERROR);
 		}

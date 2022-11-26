@@ -12,7 +12,7 @@ import com.shopping.exception.AuthRequestException;
 import com.shopping.service.AuthServiceImpl;
 
 @RestController
-@RequestMapping("/shoppingApp")
+@RequestMapping("/shoppingApp/auth")
 public class AuthController {
 	
 	@Autowired

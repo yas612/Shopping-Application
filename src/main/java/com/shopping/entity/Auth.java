@@ -1,5 +1,6 @@
 package com.shopping.entity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;  
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,9 +13,13 @@ public class Auth {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name="id")
 	private int id;
-
+    
+	@Column(name="user_name")
 	private String userName;
+	
+	@Column(name="password")
 	private String password;
 	
 

@@ -1,0 +1,94 @@
+package com.shopping.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import com.shopping.constants.Constants;
+import com.shopping.entity.Product;
+
+
+@Service
+public class ProductServiceImpl implements ProductService {
+	
+	@Autowired
+	JdbcTemplate jdbcTemplate;
+	
+	Constants constants = new Constants();
+	
+	public List<Product> NoteligibleProduct = new ArrayList<Product>();
+	public List<String> rejectedProduct = new ArrayList<String>();
+	
+
+	private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
+
+	@Override
+	public void addProduct(List<Product> product) {
+		
+		productValidation(product);
+		product.removeAll(NoteligibleProduct);
+		
+		rejectedProduct.forEach(eachRejectedProduct -> {
+			log.info(eachRejectedProduct);
+		});
+		
+		product.forEach(everyProduct -> {
+			jdbcTemplate.update(constants.AddProductQuery, new Object[] {everyProduct.getId(), everyProduct.getName(), everyProduct.getStock(), everyProduct.getPrice(), everyProduct.getCurrency(), everyProduct.getBrand(), everyProduct.getCategory()});
+		});
+		
+	}
+
+	@Override
+	public Boolean productValidation(List<Product> product) {
+		
+		if(product.isEmpty()) {
+			log.error("The products entered is empty.");
+			return false;
+		}
+		
+		product.forEach(eachProduct -> {
+			if(eachProduct.getName().isEmpty()) {
+				NoteligibleProduct.add(eachProduct);
+				log.error("Name field is empty for product with id "+eachProduct.getId());
+				rejectedProduct.add(eachProduct.toString()+constants.Separator+" STATUS : REJECTED "+constants.Separator+" Reason : Name is empty");
+			}
+			
+			if(eachProduct.getBrand().isEmpty()) {
+				NoteligibleProduct.add(eachProduct);
+				log.error("Brand field is empty for product with id "+eachProduct.getId());
+				rejectedProduct.add(eachProduct.toString()+constants.Separator+" STATUS : REJECTED "+constants.Separator+" Reason : Brand is empty");
+			}
+			
+			if(eachProduct.getPrice().doubleValue() < 0.1) {
+				NoteligibleProduct.add(eachProduct);
+				log.error("The value of price is 0 or negative for product with id "+eachProduct.getId());
+				rejectedProduct.add(eachProduct.toString()+constants.Separator+" STATUS : REJECTED "+constants.Separator+" Reason : The value of price is 0 or negative");
+			}
+			
+			if(eachProduct.getStock() < 1) {
+				NoteligibleProduct.add(eachProduct);
+				log.error("The value of stock is 0 or negative for product with id "+eachProduct.getId());
+				rejectedProduct.add(eachProduct.toString()+constants.Separator+" STATUS : REJECTED "+constants.Separator+" Reason : The value of stock is 0 or negative");
+			}
+			
+			if(eachProduct.getCurrency().isEmpty()) {
+				NoteligibleProduct.add(eachProduct);
+				log.error("Currency field is empty for product with id "+eachProduct.getId());
+				rejectedProduct.add(eachProduct.toString()+constants.Separator+" STATUS : REJECTED "+constants.Separator+" Reason : Currency field is empty");
+			}
+			
+			if(eachProduct.getCategory().isEmpty()) {
+				NoteligibleProduct.add(eachProduct);
+				log.error("Category field is empty for product with id "+eachProduct.getId());
+				rejectedProduct.add(eachProduct.toString()+constants.Separator+" STATUS : REJECTED "+constants.Separator+" Reason : Category field is empty");
+			}
+			
+		    
+		});
+		return true;
+	}
+
+}
