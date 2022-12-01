@@ -10,16 +10,21 @@ import org.springframework.stereotype.Service;
 import com.shopping.AuthRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Auth;
+import com.shopping.entity.User;
 import com.shopping.exception.AuthRequestException;
 
 
 @Service
 public class AuthServiceImpl implements AuthService {
 	
-	
+	@Autowired
+	private ShoppingAppMailService notificationService;
 	
 	@Autowired
 	JdbcTemplate jdbcTemplate;
+	
+	@Autowired
+	User user;
 	
 	Constants constants = new Constants();
 	
@@ -45,6 +50,9 @@ public class AuthServiceImpl implements AuthService {
 		{
 		throw new AuthRequestException(constants.PasswordLengthERROR);
 		}
+		
+		user.setEmailAddress("mryas612@gmail.com");
+		//notificationService.sendEmail(user);
 		
 	     jdbcTemplate.update(constants.RegisterQuery, new Object[] {auth.getId(), auth.getUserName(), auth.getPassword()});
 	     log.info("Successfully registered");
