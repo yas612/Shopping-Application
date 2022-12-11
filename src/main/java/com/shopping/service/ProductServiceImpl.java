@@ -17,7 +17,7 @@ import com.shopping.ProductRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Product;
 import com.shopping.entity.Products;
-import com.shopping.entity.User;
+
 
 
 @Service

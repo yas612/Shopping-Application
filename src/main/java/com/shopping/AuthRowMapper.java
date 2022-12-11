@@ -14,7 +14,11 @@ public class AuthRowMapper implements RowMapper<Auth> {
 		Auth auth = new Auth();
 		auth.setId(rs.getInt("id"));
 		auth.setPassword(rs.getString("password"));
-		auth.setUserName(rs.getString("user_name"));
+		auth.setFirstName(rs.getString("first_name"));
+		auth.setLastName(rs.getString("last_name"));
+		auth.setEmail(rs.getString("email"));
+		auth.setVerification_code(rs.getString("code"));
+		auth.setValid(rs.getBoolean("valid"));
 		return auth;
 	}
 

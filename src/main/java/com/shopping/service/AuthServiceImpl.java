@@ -1,30 +1,36 @@
 package com.shopping.service;
 
-
+import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.stream.Collectors;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.shopping.AuthRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Auth;
-import com.shopping.entity.User;
 import com.shopping.exception.AuthRequestException;
+import net.bytebuddy.utility.RandomString;
 
 
 @Service
 public class AuthServiceImpl implements AuthService {
 	
 	@Autowired
-	private ShoppingAppMailService notificationService;
+    private PasswordEncoder passwordEncoder;
+     
+    @Autowired
+    private JavaMailSender mailSender;
 	
 	@Autowired
 	JdbcTemplate jdbcTemplate;
-	
-	@Autowired
-	User user;
 	
 	Constants constants = new Constants();
 	
@@ -32,30 +38,35 @@ public class AuthServiceImpl implements AuthService {
 	private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
 	@Override
-	public void register(Auth auth) {
+	public void register(Auth auth,String siteURL) throws UnsupportedEncodingException, MessagingException{
 			
-		Auth authCheck = findUserByUserName(auth);
+		Auth authCheck = findUserByEmail(auth);
 		
 		if(!(authCheck==null)) {
-			throw new AuthRequestException(constants.UsernameAlreadyExistsError);
+			log.error(constants.EmailAlreadyExistsError);
+			throw new AuthRequestException(constants.EmailAlreadyExistsError);
 		}
 		
 		if(authCheck==null) {
 			
-			if(auth.getUserName().length()<6) {
-				throw new AuthRequestException(constants.UserNameLengthERROR);
-			}
 	
 		if(auth.getPassword().length()<8)
 		{
+			log.error(constants.PasswordLengthERROR);
 		throw new AuthRequestException(constants.PasswordLengthERROR);
 		}
 		
-		user.setEmailAddress("mryas612@gmail.com");
-		//notificationService.sendEmail(user);
+		 String encodedPassword = passwordEncoder.encode(auth.getPassword());
+		    auth.setPassword(encodedPassword);
+		     
+		    String randomCode = RandomString.make(64);
+		    auth.setVerification_code(randomCode);
+		    auth.setValid(false);
 		
-	     jdbcTemplate.update(constants.RegisterQuery, new Object[] {auth.getId(), auth.getUserName(), auth.getPassword()});
-	     log.info("Successfully registered");
+	     jdbcTemplate.update(constants.RegisterQuery, new Object[] {auth.getId(), auth.getFirstName(), auth.getLastName(), auth.getPassword(), auth.getEmail(), auth.getVerification_code(), auth.isValid()});
+	     log.info("A verfication code is sent to the mail");
+	     
+	     sendVerificationEmail(auth, siteURL);
 		}
 		
 		
@@ -64,26 +75,38 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public Boolean login(Auth auth) {
 		
-		Auth authLogin = findUserByUserName(auth);
+		Auth authLogin = findUserByEmail(auth);
 		if(!(authLogin == null)) {
-		String fetchedUserName = authLogin.getUserName();
+		String fetchedEmail = authLogin.getEmail();
 		String fetchedPassWord = authLogin.getPassword();
-		 
-		if((auth.getUserName().equals(fetchedUserName)) && (auth.getPassword().equals(fetchedPassWord)))
+		Boolean valid = authLogin.isValid();
+		
+		boolean isPasswordMatch = passwordEncoder.matches(auth.getPassword(), fetchedPassWord);
+		
+		if(!valid) {
+			log.error("Plese complete the verfication process to proceed further");
+			return false;
+		}
+		
+		if((auth.getEmail().equals(fetchedEmail)) && (isPasswordMatch) && (valid))
 		{
+			log.info("Authentication successful");
 			return true;
+			
 		}
+		
 		}
+		log.error("Authentication failed.");
 		return false;
 		
 	}
 
 	
-	  public Auth findUserByUserName(Auth auth) {
+	  public Auth findUserByEmail(Auth auth) {
 		  
-		  String userNameQuery = constants.UserNameExtractQuery+"'"+auth.getUserName()+"'";
+		  String eMailQuery = constants.EmailExtractQuery+"'"+auth.getEmail()+"'";
 		
-	 List<Auth> FetchedAuthObject = jdbcTemplate.query(userNameQuery, new AuthRowMapper());
+	 List<Auth> FetchedAuthObject = jdbcTemplate.query(eMailQuery, new AuthRowMapper());
 		  
 	 if(FetchedAuthObject.isEmpty()) {
 		return null;
@@ -91,6 +114,66 @@ public class AuthServiceImpl implements AuthService {
 		   return FetchedAuthObject.get(0); 
 		  
 		   }
+	  
+	  private void sendVerificationEmail(Auth auth, String siteURL)
+		        throws MessagingException, UnsupportedEncodingException {
+		    String toAddress = auth.getEmail();
+		    String fromAddress = "test6121@gmail.com";
+		    String senderName = "Shopping Application";
+		    String subject = "Please verify your registration";
+		    String content = constants.mailContent;
+		     
+		    MimeMessage message = mailSender.createMimeMessage();
+		    MimeMessageHelper helper = new MimeMessageHelper(message);
+		     
+		    helper.setFrom(fromAddress, senderName);
+		    helper.setTo(toAddress);
+		    helper.setSubject(subject);
+		     
+		    content = content.replace("[[name]]", auth.getFirstName()+" "+auth.getLastName());
+		   // localhost:8080/shoppingApp/auth/
+		    String verifyURL = siteURL + "/shoppingApp/auth/verify/"+auth.getEmail()+"?code=" + auth.getVerification_code();
+		     
+		    content = content.replace("[[URL]]", verifyURL);
+		     
+		    helper.setText(content, true);
+		     
+		    mailSender.send(message);
+		     
+		}
+	  
+	  public boolean verify(String verificationCode, String mail) {
+		  
+		    List<Auth> FetchedObject = getAllAuth().stream().filter(auth1 -> auth1.getEmail().equals(mail)).collect(Collectors.toList());
+		    		
+		    if(FetchedObject.isEmpty()) {
+		    	log.error("No account found with this email.");
+		    	return false;
+		    }
+		     
+		    else {
+		    	Auth oneUser = FetchedObject.get(0);
+		
+		    	if(oneUser.getVerification_code().equals(verificationCode)) {
+		    	  jdbcTemplate.update(constants.VerifyQuery+oneUser.getId());
+		        
+		        return true;
+		    	}
+		    	log.error(constants.verficationCodeError);
+		    	return false;
+		    	
+		    }
+		     
+		}
+
+	@Override
+	public List<Auth> getAllAuth() {
+		List<Auth> allusers =  jdbcTemplate.query(constants.FetchAllAuthQuery, new AuthRowMapper());
+		if(allusers.isEmpty()) {
+			return null;
+		}
+		return allusers;
+	}
 	 
   
 
