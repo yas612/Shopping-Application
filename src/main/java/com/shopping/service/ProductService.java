@@ -1,10 +1,7 @@
 package com.shopping.service;
 
-import java.math.BigDecimal;
 import java.util.List;
-
 import com.shopping.entity.Product;
-import com.shopping.entity.Products;
 
 public interface ProductService {
 	

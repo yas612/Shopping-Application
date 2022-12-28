@@ -1,7 +1,9 @@
 package com.shopping.service;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -16,8 +18,10 @@ import org.springframework.stereotype.Service;
 import com.shopping.AuthRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Auth;
+import com.shopping.entity.Roles;
 import com.shopping.exception.AuthRequestException;
 import net.bytebuddy.utility.RandomString;
+import java.util.Random;   
 
 
 @Service
@@ -34,7 +38,12 @@ public class AuthServiceImpl implements AuthService {
 	
 	Constants constants = new Constants();
 	
-
+	Set<Roles> roles = new HashSet<Roles>();
+	
+	Random random = new Random();   
+	
+	
+	
 	private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
 	@Override
@@ -46,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
 			log.error(constants.EmailAlreadyExistsError);
 			throw new AuthRequestException(constants.EmailAlreadyExistsError);
 		}
+		
 		
 		if(authCheck==null) {
 			
@@ -142,6 +152,33 @@ public class AuthServiceImpl implements AuthService {
 		     
 		}
 	  
+	  public void sendMerchantVerificationEmail(Auth auth, String siteURL)
+		        throws MessagingException, UnsupportedEncodingException {
+		    String toAddress = auth.getEmail();
+		    String fromAddress = "test6121@gmail.com";
+		    String senderName = "Shopping Application";
+		    String subject = "Please verify your registration";
+		    String content = constants.mailContent;
+		     
+		    MimeMessage message = mailSender.createMimeMessage();
+		    MimeMessageHelper helper = new MimeMessageHelper(message);
+		     
+		    helper.setFrom(fromAddress, senderName);
+		    helper.setTo(toAddress);
+		    helper.setSubject(subject);
+		     
+		    content = content.replace("[[name]]", auth.getFirstName()+" "+auth.getLastName());
+		   // localhost:8080/shoppingApp/auth/
+		    String verifyURL = siteURL + "/shoppingApp/auth/verify/merchantUser/"+auth.getEmail()+"?code=" + auth.getVerification_code();
+		     
+		    content = content.replace("[[URL]]", verifyURL);
+		     
+		    helper.setText(content, true);
+		     
+		    mailSender.send(message);
+		     
+		}
+	  
 	  public boolean verify(String verificationCode, String mail) {
 		  
 		    List<Auth> FetchedObject = getAllAuth().stream().filter(auth1 -> auth1.getEmail().equals(mail)).collect(Collectors.toList());
@@ -155,8 +192,15 @@ public class AuthServiceImpl implements AuthService {
 		    	Auth oneUser = FetchedObject.get(0);
 		
 		    	if(oneUser.getVerification_code().equals(verificationCode)) {
+		    		
+		    		int id = random.nextInt(100000);   
+		    		
+		    		jdbcTemplate.update(constants.DefaultRoleInsertQuery, new Object[] {id, oneUser.getEmail(), constants.DefaultRole});
+		    		//Roles role = new Roles("USER");
+		    		//roles.add(role);
+		    		//oneUser.setRoles(roles);
 		    	  jdbcTemplate.update(constants.VerifyQuery+oneUser.getId());
-		        
+		          
 		        return true;
 		    	}
 		    	log.error(constants.verficationCodeError);
@@ -173,6 +217,71 @@ public class AuthServiceImpl implements AuthService {
 			return null;
 		}
 		return allusers;
+	}
+
+
+	@Override
+	public boolean merchantVerify(String verificationCode, String mail) {
+		 List<Auth> FetchedObject = getAllAuth().stream().filter(auth1 -> auth1.getEmail().equals(mail)).collect(Collectors.toList());
+ 		
+		    if(FetchedObject.isEmpty()) {
+		    	log.error("No account found with this email.");
+		    	return false;
+		    }
+		     
+		    else {
+		    	Auth oneUser = FetchedObject.get(0);
+		
+		    	if(oneUser.getVerification_code().equals(verificationCode)) {
+		    		
+		    		int id = random.nextInt(100000);   
+		    		
+		    		jdbcTemplate.update(constants.DefaultRoleInsertQuery, new Object[] {id, oneUser.getEmail(), constants.MerchantRole});
+		    		//Roles role = new Roles("USER");
+		    		//roles.add(role);
+		    		//oneUser.setRoles(roles);
+		    	  jdbcTemplate.update(constants.VerifyQuery+oneUser.getId());
+		          
+		        return true;
+		    	}
+		    	log.error(constants.verficationCodeError);
+		    	return false;
+		    	
+		    }
+	}
+
+	@Override
+	public void merchantRegister(Auth auth, String siteURL) throws UnsupportedEncodingException, MessagingException {
+           Auth authCheck = findUserByEmail(auth);
+		
+		if(!(authCheck==null)) {
+			log.error(constants.EmailAlreadyExistsError);
+			throw new AuthRequestException(constants.EmailAlreadyExistsError);
+		}
+		
+		
+		if(authCheck==null) {
+			
+	
+		if(auth.getPassword().length()<8)
+		{
+			log.error(constants.PasswordLengthERROR);
+		throw new AuthRequestException(constants.PasswordLengthERROR);
+		}
+		
+		 String encodedPassword = passwordEncoder.encode(auth.getPassword());
+		    auth.setPassword(encodedPassword);
+		     
+		    String randomCode = RandomString.make(64);
+		    auth.setVerification_code(randomCode);
+		    auth.setValid(false);
+		
+	     jdbcTemplate.update(constants.RegisterQuery, new Object[] {auth.getId(), auth.getFirstName(), auth.getLastName(), auth.getPassword(), auth.getEmail(), auth.getVerification_code(), auth.isValid()});
+	     log.info("A verfication code is sent to the mail");
+	     
+	     sendMerchantVerificationEmail(auth, siteURL);
+		}
+		
 	}
 	 
   

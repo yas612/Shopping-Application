@@ -24,6 +24,8 @@ public class ProductController {
 	@Autowired
 	ProductServiceImpl service;
 	
+	//Merchant can add the product
+	
 	@PostMapping(path="/add",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
 	public String addProduct(@RequestBody List<Product> product) {
 		service.addProduct(product);
@@ -31,12 +33,16 @@ public class ProductController {
 		
 	}
 	
+	//Merchant can update the product
+	
 	@PostMapping(path="/update",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
 	public String updateProduct(@RequestBody List<Product> product) {
 		service.updateProduct(product);
 		return "Successfully added product";
 		
 	}
+	
+	//Merchant can delete the product
 	
 	@DeleteMapping(path="/delete/{id}",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
 	public ResponseEntity<String> deleteProduct(@PathVariable("id") int id) {
@@ -47,6 +53,8 @@ public class ProductController {
 		      return new ResponseEntity<>("Cannot delete product.", HttpStatus.INTERNAL_SERVER_ERROR);
 		    }
 		  }
+	
+	//To retrieve all the products
 	
 	@GetMapping(path="/getAllProducts")
 	public ResponseEntity<String> getAllProducts(){
@@ -60,29 +68,28 @@ public class ProductController {
 		
 	}
 	
+	// To sort the product by price(Low to high)
 	
 	@GetMapping(path="/getAllProducts/sortByPrice/Asc")
-	public List<Product> getAllProductsSortedByPriceAsc(){
-		
+	public List<Product> getAllProductsSortedByPriceAsc(){	
 			return service.sortProductByPriceAsc();
-			 
-		
-		
 	}
+	
+	// To sort the product by price(High to low)
 	
 	@GetMapping(path="/getAllProducts/sortByPrice/Dsc")
 	public List<Product> getAllProductsSortedByPriceDsc(){
-		
 			return service.sortProductByPriceDesc();
-		
 	}
 	
+	// To filter the product based on company name.
 	@GetMapping(path="/filter/ByProductName/{name}",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
 	public List<Product> filterProductByName(@PathVariable("name") String name) {
 		
 		     return service.fetchProductByName(name);
 	}
 	
+	//To filter the product based on category.
 	@GetMapping(path="/filter/ByProductCategory/{category}",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
 	public List<Product> filterProductByCategory(@PathVariable("category") String category) {
 
