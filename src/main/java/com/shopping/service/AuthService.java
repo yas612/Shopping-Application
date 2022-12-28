@@ -10,9 +10,11 @@ import com.shopping.entity.Auth;
 public interface AuthService {
 	
 	public void register(Auth auth,String siteURL) throws UnsupportedEncodingException, MessagingException;
+	public void merchantRegister(Auth auth,String siteURL) throws UnsupportedEncodingException, MessagingException;
 	public Boolean login(Auth auth);
 	public Auth findUserByEmail(Auth auth);
 	public boolean verify(String verificationCode, String mail);
+	public boolean merchantVerify(String verificationCode, String mail);
 	public List<Auth> getAllAuth();
 	
 }

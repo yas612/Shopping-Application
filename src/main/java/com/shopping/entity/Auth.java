@@ -1,11 +1,12 @@
 package com.shopping.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;  
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
+
+import java.util.*;
+
+import javax.management.relation.Role;
+import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 
@@ -37,6 +38,14 @@ public class Auth {
 	
 	@Column(name="valid")
 	private boolean isValid;
+	
+	@ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+            )
+    private Set<Roles> roles = new HashSet<>();
 	
 
 	public Auth() {
@@ -113,6 +122,18 @@ public class Auth {
 	public void setValid(boolean isValid) {
 		this.isValid = isValid;
 	}
+	
+	
+
+
+	public Set<Roles> getRoles() {
+		return roles;
+	}
+
+
+	public void setRoles(Set<Roles> roles) {
+		this.roles = roles;
+	}
 
 
 	public Auth(int id, String firstName, String lastName, String password, String email, String verification_code,
@@ -128,6 +149,22 @@ public class Auth {
 	}
 	
 	
+	
+
+
+	public Auth(int id, String firstName, String lastName, String password,
+			@Email(message = "Email is not valid", regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}") @NotEmpty(message = "Email cannot be empty") String email,
+			String verification_code, boolean isValid, Set<Roles> roles) {
+		super();
+		this.id = id;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.password = password;
+		this.email = email;
+		this.verification_code = verification_code;
+		this.isValid = isValid;
+		this.roles = roles;
+	}
 
 
 	public Auth(String password,
@@ -143,6 +180,9 @@ public class Auth {
 		return "Auth [id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", password=" + password
 				+ ", email=" + email + ", verification_code=" + verification_code + ", isValid=" + isValid + "]";
 	}
+
+
+	
 	
 	
 	

@@ -1,22 +1,18 @@
 package com.shopping.service;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
 import com.shopping.ProductRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Product;
-import com.shopping.entity.Products;
 
 
 
