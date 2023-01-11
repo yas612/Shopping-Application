@@ -52,6 +52,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	  .antMatchers("/shoppingApp/product/getAllProducts/add").hasAnyAuthority("MERCHANT", "ADMIN")
 	  .antMatchers("/shoppingApp/product/getAllProducts/update").hasAnyAuthority("MERCHANT", "ADMIN")
 	  .antMatchers("/shoppingApp/product/getAllProducts/delete").hasAnyAuthority("MERCHANT", "ADMIN")
+	  .antMatchers("/shoppingApp/cart/add/**").hasAnyAuthority("USER", "ADMIN")
 	  .anyRequest().authenticated().and().formLogin().permitAll().and()
 	  .logout().permitAll().and().exceptionHandling().accessDeniedPage("/403")
 	  .and().httpBasic();
