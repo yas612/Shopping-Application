@@ -1,11 +1,15 @@
 package com.shopping.service;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.Vector;
 
 import org.json.JSONArray;
@@ -22,6 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.google.gson.Gson;
 import com.shopping.CartRowMapper;
 import com.shopping.ProductRowMapper;
 import com.shopping.constants.Constants;
@@ -41,15 +46,16 @@ public class CartServiceImpl implements CartService {
 	private BigDecimal cartTotal = new BigDecimal(0);
 	
 	Random random = new Random(); 
+	int count =0;
 	
 	private static final Logger log = LoggerFactory.getLogger(CartServiceImpl.class);
 	
-
-	
-	
 	Cart cart = new Cart();
 	List<CartIndividualProduct> allProductofCart = new ArrayList<CartIndividualProduct>();
-
+	List<CartIndividualProduct> checkExistingCartIndividualProducts = new ArrayList<CartIndividualProduct>();
+	List<Cart> FetchedProductofCart = new ArrayList<Cart>();
+	ObjectMapper mapper = new ObjectMapper();
+	String jsonString="";
 
 	@Override
 	public void addtoCart(int id) throws CartException, JsonProcessingException {
@@ -74,45 +80,6 @@ public class CartServiceImpl implements CartService {
 		     } else {
 		        username = principal.toString();
 		     }
-		    
-		   // List<Cart> cart =  jdbcTemplate.query(constants.ExtractCartQuery+"'"+username+"'",new CartRowMapper());
-		    
-		     Map<String, Object> cart =  jdbcTemplate.queryForMap(constants.ExtractCartQuery+"'"+username+"'");
-		     
-		     if(!cart.isEmpty()) {
-		    	 
-		    	 CartIndividualProduct cartProduct = new CartIndividualProduct();
-			     cartProduct.setId(requiredProduct.getId());
-			     cartProduct.setProductName(requiredProduct.getName());
-			     cartProduct.setProductBrandName(requiredProduct.getBrand());
-			     cartProduct.setProductCategory(requiredProduct.getCategory());
-			     cartProduct.setProductPrice(requiredProduct.getPrice());
-			     cartProduct.setProductCount(1);
-			     cartProduct.setProductCurrency(requiredProduct.getCurrency());
-			     allProductofCart.add(cartProduct);
-			     //cart.setAllProduct(allProductofCart);
-			     
-			     cartTotal = cartTotal.add(cartProduct.getProductPrice().multiply(BigDecimal.valueOf(cartProduct.getProductCount())));
-			     
-			     ObjectMapper mapper = new ObjectMapper();
-			      //Converting the Object to JSONString
-			      
-			     JSONArray jsonArray = new JSONArray();
-			     
-			    Object id1 =  cart.get("products");
-			    
-			     allProductofCart.forEach((toBeConverTedToJSON) -> {
-			    	 String jsonString="";
-						try {
-							jsonString = mapper.writeValueAsString(toBeConverTedToJSON);
-						} catch (JsonProcessingException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						jsonArray.put(toBeConverTedToJSON.getId(), jsonString);
-						
-			     });;
-		     }
 		     
 		     CartIndividualProduct cartProduct = new CartIndividualProduct();
 		     cartProduct.setId(requiredProduct.getId());
@@ -123,123 +90,90 @@ public class CartServiceImpl implements CartService {
 		     cartProduct.setProductCount(1);
 		     cartProduct.setProductCurrency(requiredProduct.getCurrency());
 		     allProductofCart.add(cartProduct);
-		     //cart.setAllProduct(allProductofCart);
+ 
+		     FetchedProductofCart = jdbcTemplate.query(constants.ExtractCartQuery+"'"+username+"'", new CartRowMapper());
 		     
-		     cartTotal = cartTotal.add(cartProduct.getProductPrice().multiply(BigDecimal.valueOf(cartProduct.getProductCount())));
-		     //cart.setBagTotal(cartTotal);
-		     //int carId = random.nextInt(100000); 
-		     //cart.setId(carId);
-		     ObjectMapper mapper = new ObjectMapper();
-		      //Converting the Object to JSONString
-		      
-		     JSONArray jsonArray = new JSONArray();
-		     List<JSONObject> elementsList = new ArrayList<JSONObject>();
-		     
+		     if(!FetchedProductofCart.isEmpty()) {
+	    	
+		    	 Cart oldCart = FetchedProductofCart.get(0);
+				 
+		         String[] eachProductArray = oldCart.getAllProductsInCart().split("\\"+constants.Separator);
+		         List<String> eachProductList = Arrays.asList(eachProductArray);
+
+		    	Set<CartIndividualProduct> list = new LinkedHashSet<CartIndividualProduct>();
+		    	eachProductList.forEach((product) -> {
+		    		 Gson gson = new Gson();
+		    		
+		    		 CartIndividualProduct cartProduct1 = gson.fromJson(product, CartIndividualProduct.class); 
+		    	
+		    		list.add(cartProduct1);
+		    	});
+		    		
+		    	//To check in the existing products
+		    	list.forEach((check) -> {
+		    		
+		    		if(check.getId()==id) {
+		    			check.setProductCount(check.getProductCount()+1);
+		    			oldCart.setBagTotal(oldCart.getBagTotal().add(cartProduct.getProductPrice()));
+		    		}
+		    		
+		    		if(!(check.getId()==id)) {
+		    		    count = count+1;
+		    		}
+		    	
+		    	});
+		    	
+		    	if(count==list.size()) {
+		    		list.add(cartProduct);
+		    	}
+		    	
+		    	count =0;
+                  
+		    	 StringBuilder val = new StringBuilder();
+		    list.forEach(update -> {
+		    	try {
+		    		
+		    	jsonString = mapper.writeValueAsString(update);
+		    	}
+		    	 catch(JsonProcessingException e) {
+					  
+					   e.printStackTrace();  }
+		    	val.append(jsonString+constants.Separator);
+		    	
 		    
-		     allProductofCart.forEach((toBeConverTedToJSON) -> {
-		    	 String jsonString="";
-					try {
-						jsonString = mapper.writeValueAsString(toBeConverTedToJSON);
-					} catch (JsonProcessingException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					jsonArray.put(toBeConverTedToJSON.getId(), jsonString);
-					
-		     });;
+		    });
+         jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, oldCart.getBagTotal());
+		         
+		         jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()-1)+"WHERE id="+requiredProduct.getId());
+		     }
 		     
-		    for(int i=0;i<8;i++) {
-		    	jsonArray.remove(i);
-		    }
-		   
-		  /*   allProductofCart.forEach(product -> {
-		    	 JSONObject formDetailsJson = new JSONObject();
-		    	 String jsonString="";
+		     
+		     if(FetchedProductofCart.isEmpty()) {
+		     cartTotal = cartTotal.add(cartProduct.getProductPrice().multiply(BigDecimal.valueOf(cartProduct.getProductCount())));
+		     
 				try {
-					jsonString = mapper.writeValueAsString(product);
+					jsonString = mapper.writeValueAsString(cartProduct);
 				} catch (JsonProcessingException e) {
-					// TODO Auto-generated catch block
+					
 					e.printStackTrace();
 				}
-				jsonArray.put(product.getId(), jsonString);
-				
-		        // formDetailsJson.put(String.valueOf(product.getId()), jsonString);
-		       //  formDetailsJson.put("name", );
-		        // elementsList.add(formDetailsJson);
-		    	 
-		     });*/
-		   
-		     System.out.println(jsonArray.length());
-		     System.out.println(jsonArray.length());
-		     System.out.println(allProductofCart);
 		     
-		    // if(!cart.isEmpty()) {
-		    	 
-		    	// Cart existingCart = new Cart();
-		    	 //existingCart = cart.get(0);
-		    	 //cartTotal = existingCart.getBagTotal();
-		    	 //cartTotal.add(requiredProduct.getPrice());
-		    	// JSONObject formDetailsJso =  existingCart.getAllProductsInCart().getJSONObject(String.valueOf(requiredProduct.getId()));
-		    	 //formDetailsJso.get
-		    	 
-		     //}
-
-		   // responseDetailsJson.put("products", elementsList);
-		    
-		     //List<JSONObject> elementsList1 = new ArrayList<JSONObject>();
-		    
-			  // Map<String, Object> fetchedCart = new HashMap<String, Object>();
-			  // System.out.println(cart.get(cart));
-			 //  System.out.println(cart.get("products"));
-			 //  System.out.println(cart.get("total"));
-			   //CartIndividualProduct cartProduct1 = new CartIndividualProduct();
-			  // cartProduct1 = (CartIndividualProduct) cart.get("products");
-			   //System.out.println(cartProduct1.getProductCategory());
-			 //  System.out.println( cart.get("products").toString());
-			   
-			   
-			 
-			  // JSONObject responseDetailsJsonOld = new JSONObject(); 
-			   //responseDetailsJsonOld.get(username);
-			  // ObjectMapper mapper2 = new JsonMapper();
-			  // JsonNode json = mapper2.readTree(cart.get("products").toString());
-			 //  String name = json.get("productCategory'\'").asText();
-			  // System.out.println("new"+name);
-			   
-			     // String jsonStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(cart.get("products"));
-			      //System.out.println(jsonStr);
-			      System.out.println("Deserializing JSON to Object:");
-			     // CartIndividualProduct emp2 = mapper.readValue(jsonStr, CartIndividualProduct.class);
-			     // System.out.println(emp2.getProductBrandName());
-			  // System.out.println(cart.get));
-			   /*if(!cart.isEmpty()) {
-				   fetchedCart = cart.get(0);
-				   JSONObject responseDetailsJsonOld = new JSONObject(); 
-				   responseDetailsJsonOld = (JSONObject) fetchedCart.get(username);
-				   
-				   System.out.println(cart.get(0));
-				   System.out.println(fetchedCart.get(username));
-				   ObjectMapper mapper = new ObjectMapper();
-				      String jsonStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(fetchedCart.get("products"));
-				      System.out.println(jsonStr);
-				      System.out.println("Deserializing JSON to Object:");
-				      Cart emp2 = mapper.readValue(jsonStr, Cart.class);
-				      System.out.println(emp2.getUsername()+emp2.getAllProductsInCart()+emp2.getBagTotal());
-				   }*/
-			   
-		    //System.out.println(jsonArray);
-		     //jdbcTemplate.update(constants.AddToCartQuery, cart.getId(), jsonArray, cart.getBagTotal(), username);
-		    // jdbcTemplate.update("INSERT INTO cart(id, products, total, username) VALUES ("+cart.getId()+","+"'"+jsonArray+"'"+","+cart.getBagTotal()+","+"'"+ username+"'"+")");
-		   jdbcTemplate.update("INSERT INTO cart(username, products, total) VALUES ("+"'"+ username+"'"+","+"'"+jsonArray+"'"+","+cartTotal+")");
-		    //System.out.println(jsonArray);
-		    // int toBeUpdatedStock = requiredProduct.getStock()-1;
+				 Cart toBeUpdated = new Cart();
+			     toBeUpdated.setUsername(username);
+			     toBeUpdated.setAllProductsInCart(jsonString);
+			     toBeUpdated.setBagTotal(cartTotal);
+	     
+		     int cart1 =  jdbcTemplate.update((con) -> {
+	                final PreparedStatement ps = con.prepareStatement(constants.AddToCartQuery);
+	                ps.setString(1, toBeUpdated.getUsername());
+	                ps.setString(2, toBeUpdated.getAllProductsInCart()+constants.Separator);
+	                ps.setBigDecimal(3, cartTotal);
+	                return ps;
+	            });
 		     
-		    // jdbcTemplate.update("UPDATE product SET stock="+toBeUpdatedStock+"WHERE id="+requiredProduct.getId());
+		     jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()-1)+"WHERE id="+requiredProduct.getId());
+		     }
 		     
-		     
-		     
-		     
-			log.info(username);
 		}
 
 	

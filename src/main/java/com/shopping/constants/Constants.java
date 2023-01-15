@@ -18,9 +18,9 @@ public class Constants {
    public final String FetchProductByCategoryQuery = "select * from product WHERE category=";
    public final String FetchAllProductById =  "select * from product WHERE id=";
    public final String FetchAllAuthQuery = "select * from Auth";
-   //public final String AddToCartQuery = "INSERT INTO cart(id, products, total, username) VALUES (?,?,?,?)";
-   public final String ExtractCartQuery = "SELECT products, total FROM cart WHERE username=";
-   public final String UpdateCartQuery = "UPDATE cart SET products=?, total=? WHERE id=";
+   public final String AddToCartQuery = "INSERT INTO cart(username, products, total) VALUES (?,?,?)";
+   public final String ExtractCartQuery = "SELECT * FROM cart WHERE username=";
+   public final String UpdateCartQuery = "UPDATE cart SET products =?, total=? WHERE username=";
    public final String UpdateProductStockQuery = "UPDATE product SET stock=? WHERE id=";
    public final String DefaultRoleInsertQuery = "INSERT INTO userauthority(id, email, authority) VALUES(?,?,?)";
    public final String DefaultRole = "USER";
