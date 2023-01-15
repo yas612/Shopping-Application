@@ -1,6 +1,8 @@
 package com.shopping.entity;
 
 import java.math.BigDecimal;
+import java.sql.Array;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -16,17 +18,17 @@ import com.vladmihalcea.hibernate.type.json.JsonStringType;
 
 @Entity
 @Table(name = "cart")
-@TypeDef(name = "json", typeClass = JsonStringType.class)
+//@TypeDef(name = "json", typeClass = JsonStringType.class)
 public class Cart {
 		
 	@Id
 	@Column(name="username")
 	private String username;
 	
-	@Type(type = "json")
+	//@Type(type = "json")
 	//@Column(columnDefinition = "jsonb")
-	@Column(name = "products", columnDefinition = "json" )
-	private JSONObject allProductsInCart;
+	@Column(name = "products")
+	private String allProductsInCart;
 	
 	@Column(name="total")
 	private BigDecimal bagTotal;
@@ -43,11 +45,11 @@ public class Cart {
 		this.username = username;
 	}
 
-	public JSONObject getAllProductsInCart() {
+	public String getAllProductsInCart() {
 		return allProductsInCart;
 	}
 
-	public void setAllProductsInCart(JSONObject allProductsInCart) {
+	public void setAllProductsInCart(String allProductsInCart) {
 		this.allProductsInCart = allProductsInCart;
 	}
 
@@ -59,7 +61,7 @@ public class Cart {
 		this.bagTotal = bagTotal;
 	}
 
-	public Cart(String username, JSONObject allProductsInCart, BigDecimal bagTotal) {
+	public Cart(String username, String allProductsInCart, BigDecimal bagTotal) {
 		super();
 		this.username = username;
 		this.allProductsInCart = allProductsInCart;
@@ -72,7 +74,6 @@ public class Cart {
 				+ "]";
 	}
 
-	
-	
+		
 
 }
