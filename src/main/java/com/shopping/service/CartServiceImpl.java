@@ -44,9 +44,13 @@ public class CartServiceImpl implements CartService {
 	Constants constants = new Constants();
 	
 	private BigDecimal cartTotal = new BigDecimal(0);
+	BigDecimal updatedPrice = null;
+	BigDecimal addToCartPrice = null;
+	 int updatedProductCount = 0;
 	
 	Random random = new Random(); 
-	int count =0;
+	public Boolean decider=true;
+	public Boolean cartRemoveDecider=true;
 	
 	private static final Logger log = LoggerFactory.getLogger(CartServiceImpl.class);
 	
@@ -59,6 +63,7 @@ public class CartServiceImpl implements CartService {
 
 	@Override
 	public void addtoCart(int id) throws CartException, JsonProcessingException {
+		addToCartPrice = null;
 	
 			List<Product> products =  jdbcTemplate.query(constants.FetchAllProductById+id, new ProductRowMapper());
 			if(products.isEmpty()) {
@@ -106,28 +111,42 @@ public class CartServiceImpl implements CartService {
 		    		
 		    		 CartIndividualProduct cartProduct1 = gson.fromJson(product, CartIndividualProduct.class); 
 		    	
+		    		 if(cartProduct1 != null) {
 		    		list.add(cartProduct1);
+		    		 }
 		    	});
-		    		
+		    	
+		    	System.out.println(list);
+		    	System.out.println(list.size());
+		    	System.out.println(list.isEmpty());
+		    	
+		    	
+		    	if((list != null) || !list.isEmpty()) {	
 		    	//To check in the existing products
 		    	list.forEach((check) -> {
 		    		
 		    		if(check.getId()==id) {
 		    			check.setProductCount(check.getProductCount()+1);
-		    			oldCart.setBagTotal(oldCart.getBagTotal().add(cartProduct.getProductPrice()));
+		    			addToCartPrice = (oldCart.getBagTotal().add(cartProduct.getProductPrice()));
+		    			oldCart.setBagTotal(addToCartPrice);
+		    			decider=false;
 		    		}
 		    		
-		    		if(!(check.getId()==id)) {
-		    		    count = count+1;
-		    		}
-		    	
 		    	});
 		    	
-		    	if(count==list.size()) {
+		    	if(decider) {
+		    		list.add(cartProduct);
+		    		addToCartPrice = (oldCart.getBagTotal().add(cartProduct.getProductPrice()));
+	    			oldCart.setBagTotal(addToCartPrice);
+		    		
+		    	}
+		    	}
+		    	else {
 		    		list.add(cartProduct);
 		    	}
 		    	
-		    	count =0;
+		    	decider=true;
+		    	
                   
 		    	 StringBuilder val = new StringBuilder();
 		    list.forEach(update -> {
@@ -177,27 +196,208 @@ public class CartServiceImpl implements CartService {
 		}
 
 	
+  /*
+	@Override
+	public void updateCart(int id, int count) throws CartException {
+	     
+		List<Product> products =  jdbcTemplate.query(constants.FetchAllProductById+id, new ProductRowMapper());
+		if(products.isEmpty()) {
+			log.error("Product not found");
+	    	 throw new CartException("PRODUCT NOT FOUND");
+		}
+	     Product requiredProduct = new Product();
+	     requiredProduct = products.get(0);
+	     
+	     Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+	     String username;
+
+	     if (principal instanceof UserDetails) {
+	       username = ((UserDetails)principal).getUsername();
+	     } else {
+	        username = principal.toString();
+	     }
+	     
+	     if(count == 0) {
+	    	 throw new CartException("The count cannot be 0");
+			
+	     }
+	     
+	     int updateProductCount =0;
+	     
+	     
+
+	     FetchedProductofCart = jdbcTemplate.query(constants.ExtractCartQuery+"'"+username+"'", new CartRowMapper());
+	     
+	     if(!FetchedProductofCart.isEmpty()) {
+    	
+	    	 Cart oldCart = FetchedProductofCart.get(0);
+			 
+	         String[] eachProductArray = oldCart.getAllProductsInCart().split("\\"+constants.Separator);
+	         List<String> eachProductList = Arrays.asList(eachProductArray);
+
+	    	Set<CartIndividualProduct> list = new LinkedHashSet<CartIndividualProduct>();
+	    	eachProductList.forEach((product) -> {
+	    		 Gson gson = new Gson();
+	    		
+	    		 CartIndividualProduct cartProduct1 = gson.fromJson(product, CartIndividualProduct.class); 
+	    	
+	    		list.add(cartProduct1);
+	    	});
+	    	
+	    	CartIndividualProduct toBeRemoved = new CartIndividualProduct();
+	    		
+	    	//To check in the existing products
+	    	list.forEach((check) -> {
+	    		
+	    		if(check.getId()==id) {
+	    			if((check.getProductCount()+count)<0) {
+	    				throw new CartException("There is a mismatch in the count mentioned & the existing count of the product");
+	    			}
+	    			check.setProductCount(check.getProductCount()+count);
+	    			oldCart.setBagTotal(oldCart.getBagTotal().add(check.getProductPrice().multiply(BigDecimal.valueOf(count))));
+	    			toBeRemoved = check;
+	    			cartUpdateDecider=true;
+	    		}
+	    		
+	    	});
+	    	
+	    	if(cartUpdateDecider) {
+	    		list.remove(toBeRemoved);
+	    	}
+	    	else {
+	    		throw new CartException("The product with id = "+id+" was not found in cart");
+	    	}
+	    	
+	    	cartUpdateDecider=false;
+	    	
+              
+	    	 StringBuilder val = new StringBuilder();
+	    list.forEach(update -> {
+	    	try {
+	    		
+	    	jsonString = mapper.writeValueAsString(update);
+	    	}
+	    	 catch(JsonProcessingException e) {
+				  
+				   e.printStackTrace();  }
+	    	val.append(jsonString+constants.Separator);
+	    	
+	    
+	    });
+     jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, oldCart.getBagTotal());
+	         
+	         jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()+updateProductCount)+"WHERE id="+requiredProduct.getId());
+	     }
+	     
+	     
+	  
+	}
+	*/
 
 	@Override
-	public void updateCart(int id, int count, int cartId) {
-		
-		allProductofCart.forEach( oneProduct -> {
-			if(oneProduct.getId()==id) {
-				oneProduct.setProductCount(count);
-				cartTotal.subtract(oneProduct.getProductPrice().multiply(BigDecimal.valueOf(oneProduct.getProductCount())));
-				cartTotal = cartTotal.add(oneProduct.getProductPrice().multiply(BigDecimal.valueOf(count)));
-				
-			}
-		});
-		
-		jdbcTemplate.update(constants.UpdateCartQuery+id,allProductofCart.toString(),cartTotal);
+	public void removeProductFromCart(int id) throws CartException {
+		List<Product> products =  jdbcTemplate.query(constants.FetchAllProductById+id, new ProductRowMapper());
+		if(products.isEmpty()) {
+			log.error("Error in updating product count in product table");
+	    	 throw new CartException("Error in updating product count in product table");
+		}
+	     Product requiredProduct = new Product();
+	     requiredProduct = products.get(0);
+		 Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+	     String username;
+	     updatedPrice = null;
+	     updatedProductCount = 0;
+
+	     if (principal instanceof UserDetails) {
+	       username = ((UserDetails)principal).getUsername();
+	     } else {
+	        username = principal.toString();
+	     }
+	   
+
+	     FetchedProductofCart = jdbcTemplate.query(constants.ExtractCartQuery+"'"+username+"'", new CartRowMapper());
+	     
+	     if(FetchedProductofCart.isEmpty()){
+	    	 throw new CartException("Cart not found");
+	     }
+	     
+	     if(!FetchedProductofCart.isEmpty()) {
+    	
+	    	 Cart oldCart = FetchedProductofCart.get(0);
+	    	 
+	    	 if(oldCart.getAllProductsInCart().isEmpty()){
+		    	 throw new CartException("Cart is Empty");
+		     }
+			 
+	         String[] eachProductArray = oldCart.getAllProductsInCart().split("\\"+constants.Separator);
+	         List<String> eachProductList = Arrays.asList(eachProductArray);
+
+	    	Set<CartIndividualProduct> list = new LinkedHashSet<CartIndividualProduct>();
+	    	Set<CartIndividualProduct> listCopy = new LinkedHashSet<CartIndividualProduct>();
+	    	eachProductList.forEach((product) -> {
+	    		 Gson gson = new Gson();
+	    		
+	    		 CartIndividualProduct cartProduct1 = gson.fromJson(product, CartIndividualProduct.class); 
+	    	
+	    		list.add(cartProduct1);
+	    		listCopy.add(cartProduct1);
+	    	});
+	    		updatedPrice = oldCart.getBagTotal();
+	    	//To check in the existing products
+	    	list.forEach((check) -> {
+	    		
+	    		if(check.getId()==id) {
+	    			listCopy.remove(check);
+	    			updatedPrice = oldCart.getBagTotal().subtract(check.getProductPrice().multiply(BigDecimal.valueOf(check.getProductCount())));
+	    			updatedProductCount = check.getProductCount();
+	    			cartRemoveDecider=false;
+	    		
+	    		}
+	    		
+	    	});
+	    	
+	    	if(cartRemoveDecider) {
+	    		throw new CartException("Product not found in cart, so can't able to remove it. Try adding the product.");
+	    	}
+	    	cartRemoveDecider=true;
+
+              
+	    	 StringBuilder val = new StringBuilder();
+	    	 listCopy.forEach(update -> {
+	    	try {
+	    		
+	    	jsonString = mapper.writeValueAsString(update);
+	    	}
+	    	 catch(JsonProcessingException e) {
+				  
+				   e.printStackTrace();  
+				   }
+	    	val.append(jsonString+constants.Separator);
+	    	
+	    
+	    });
+     jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, updatedPrice);
+	        
+	        
+	     jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()+updatedProductCount)+"WHERE id="+id);
 
 	}
+	}
+
 
 	@Override
-	public void removeProductFromCart(int id) {
-		// TODO Auto-generated method stub
+	public void emptyCart() throws CartException {
+		 Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+	     String username;
+	    BigDecimal emptyPrice = new BigDecimal("0.0");
 
+	     if (principal instanceof UserDetails) {
+	       username = ((UserDetails)principal).getUsername();
+	     } else {
+	        username = principal.toString();
+	     }
+		String val = "";
+		jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, emptyPrice);
 	}
 
 }
