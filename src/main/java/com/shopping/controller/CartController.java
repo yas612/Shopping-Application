@@ -29,11 +29,27 @@ public class CartController {
 		
 	}
 	
-	@PostMapping(path="/update",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
+	@GetMapping(path="/remove/{id}",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
+	public String removeFromCart(@PathVariable("id") int id) throws CartException, JsonProcessingException {
+		service.removeProductFromCart(id);
+		return "Successfully added to Cart";
+		
+	}
+	
+	@GetMapping(path="/empty",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
+	public String emptyCart() throws CartException, JsonProcessingException {
+		service.emptyCart();
+		return "Successfully added to Cart";
+		
+	}
+	
+	
+	
+	/*@PostMapping(path="/update",produces= {MediaType.APPLICATION_XML_VALUE,MediaType.APPLICATION_JSON_VALUE})
 	public String UpdateProductToCart(@RequestBody int id, int count, int cartId) throws CartException {
 		service.updateCart(id, count, cartId);
 		return "Successfully updated product";
 		
-	}
+	} */
 
 }
