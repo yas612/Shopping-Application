@@ -1,5 +1,6 @@
 package com.shopping.service;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -10,10 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import com.shopping.ProductRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Product;
-
+import com.shopping.rowmapper.ProductRowMapper;
 
 
 @Service
@@ -21,9 +21,7 @@ public class ProductServiceImpl implements ProductService {
 	
 	@Autowired
 	JdbcTemplate jdbcTemplate;
-	
-	
-	
+
 	Constants constants = new Constants();
 	
 	public List<Product> NoteligibleProduct = new ArrayList<Product>();
@@ -33,7 +31,7 @@ public class ProductServiceImpl implements ProductService {
 	private static final Logger log = LoggerFactory.getLogger(ProductServiceImpl.class);
 
 	@Override
-	public void addProduct(List<Product> product) {
+	public void addProduct(List<Product> product) throws SQLException{
 		
 		productValidation(product);
 		product.removeAll(NoteligibleProduct);
@@ -51,7 +49,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
-	public void updateProduct(List<Product> product) {
+	public void updateProduct(List<Product> product) throws SQLException{
 		productValidation(product);
 		product.removeAll(NoteligibleProduct);
 		
@@ -68,7 +66,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
-	public void deleteProduct(int id) {
+	public void deleteProduct(int id) throws SQLException{
 		
 		jdbcTemplate.update(constants.DeleteProductQuery+id);
 	}
@@ -83,7 +81,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
-	public List<Product> fetchProductByName(String name) {
+	public List<Product> fetchProductByName(String name) throws SQLException{
 		List<Product> fetchedProductByName = getAllProducts();
 		if(fetchedProductByName.isEmpty()) {
 			log.info("No Product found with this name : "+name);
@@ -94,7 +92,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
-	public List<Product> fetchProductByBrand(String brand) {
+	public List<Product> fetchProductByBrand(String brand) throws SQLException{
 		List<Product> fetchedProductByBrand = getAllProducts();
 		if(fetchedProductByBrand.isEmpty()) {
 			log.info("No Product found with this name : "+brand);
@@ -105,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public List<Product> fetchProductByCategory(String category) {
+	public List<Product> fetchProductByCategory(String category) throws SQLException{
 		List<Product> fetchedProductByCategory = getAllProducts();
 		if(fetchedProductByCategory.isEmpty()) {
 			log.info("No Product found with this name : "+category);
@@ -117,7 +115,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
-	public List<Product> sortProductByPriceDesc() {
+	public List<Product> sortProductByPriceDesc() throws SQLException{
 		List<Product> products = getAllProducts();
 		if(products.isEmpty()) {
 			return null;
@@ -131,7 +129,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public List<Product> sortProductByPriceAsc() {
+	public List<Product> sortProductByPriceAsc() throws SQLException{
 		List<Product> products = getAllProducts();
 		if(products.isEmpty()) {
 			return null;

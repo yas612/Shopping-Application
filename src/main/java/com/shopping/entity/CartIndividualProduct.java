@@ -2,12 +2,26 @@ package com.shopping.entity;
 
 import java.math.BigDecimal;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
+
+@NoArgsConstructor
+@ToString
+@Entity
+@Getter
+@Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CartIndividualProduct {
 	
+	@Id
 	private int id;
 	private String productName;
 	private String productBrandName;
@@ -15,11 +29,6 @@ public class CartIndividualProduct {
 	private BigDecimal productPrice;
 	private String productCurrency;
 	private int productCount;
-	
-	public CartIndividualProduct()
-	{
-		
-	}
 	
 	@JsonProperty("id")
 	public int getId() {
@@ -88,14 +97,6 @@ public class CartIndividualProduct {
 		this.productPrice = productPrice;
 		this.productCurrency = productCurrency;
 		this.productCount = productCount;
-	}
-	@Override
-	public String toString() {
-		return "CartIndividualProduct [id=" + id + ", productName=" + productName + ", productBrandName="
-				+ productBrandName + ", productCategory=" + productCategory + ", productPrice=" + productPrice
-				+ ", productCurrency=" + productCurrency + ", productCount=" + productCount + "]";
-	}
-	
-		
+	}	
 
 }

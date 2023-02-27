@@ -2,18 +2,13 @@ package com.shopping.service;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.Vector;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,19 +16,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
+import org.springframework.util.CollectionUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.gson.Gson;
-import com.shopping.CartRowMapper;
-import com.shopping.ProductRowMapper;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Cart;
 import com.shopping.entity.CartIndividualProduct;
 import com.shopping.entity.Product;
 import com.shopping.exception.CartException;
+import com.shopping.rowmapper.CartRowMapper;
+import com.shopping.rowmapper.ProductRowMapper;
 
 @Service
 public class CartServiceImpl implements CartService {
@@ -61,10 +54,13 @@ public class CartServiceImpl implements CartService {
 	ObjectMapper mapper = new ObjectMapper();
 	String jsonString="";
 
+	//Method to adding product
+	
 	@Override
-	public void addtoCart(int id) throws CartException, JsonProcessingException {
+	public void addtoCart(int id) throws CartException, JsonProcessingException , SQLException{
 		addToCartPrice = null;
 	
+		log.info("Cart adding process started.");
 			List<Product> products =  jdbcTemplate.query(constants.FetchAllProductById+id, new ProductRowMapper());
 			if(products.isEmpty()) {
 				log.error("Product not found");
@@ -98,7 +94,7 @@ public class CartServiceImpl implements CartService {
  
 		     FetchedProductofCart = jdbcTemplate.query(constants.ExtractCartQuery+"'"+username+"'", new CartRowMapper());
 		     
-		     if(!FetchedProductofCart.isEmpty()) {
+		     if(!CollectionUtils.isEmpty(FetchedProductofCart)) {
 	    	
 		    	 Cart oldCart = FetchedProductofCart.get(0);
 				 
@@ -130,19 +126,24 @@ public class CartServiceImpl implements CartService {
 		    			addToCartPrice = (oldCart.getBagTotal().add(cartProduct.getProductPrice()));
 		    			oldCart.setBagTotal(addToCartPrice);
 		    			decider=false;
+		    			
 		    		}
 		    		
 		    	});
+		    	
 		    	
 		    	if(decider) {
 		    		list.add(cartProduct);
 		    		addToCartPrice = (oldCart.getBagTotal().add(cartProduct.getProductPrice()));
 	    			oldCart.setBagTotal(addToCartPrice);
+	    			log.info("Existing Product in cart added => ".concat(cartProduct.toString()));
 		    		
 		    	}
 		    	}
+		    	
 		    	else {
 		    		list.add(cartProduct);
+		    		log.info("NEW Product in cart added => ".concat(cartProduct.toString()));
 		    	}
 		    	
 		    	decider=true;
@@ -161,13 +162,15 @@ public class CartServiceImpl implements CartService {
 		    	
 		    
 		    });
+		    log.info("Added product to cart");
          jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, oldCart.getBagTotal());
 		         
+         log.info("Updaing product count in product inventory");
 		         jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()-1)+"WHERE id="+requiredProduct.getId());
 		     }
 		     
 		     
-		     if(FetchedProductofCart.isEmpty()) {
+		     if(CollectionUtils.isEmpty(FetchedProductofCart)) {
 		     cartTotal = cartTotal.add(cartProduct.getProductPrice().multiply(BigDecimal.valueOf(cartProduct.getProductCount())));
 		     
 				try {
@@ -182,6 +185,7 @@ public class CartServiceImpl implements CartService {
 			     toBeUpdated.setAllProductsInCart(jsonString);
 			     toBeUpdated.setBagTotal(cartTotal);
 	     
+			     log.info("First product is addded to cart => ".concat(toBeUpdated.toString()));
 		     int cart1 =  jdbcTemplate.update((con) -> {
 	                final PreparedStatement ps = con.prepareStatement(constants.AddToCartQuery);
 	                ps.setString(1, toBeUpdated.getUsername());
@@ -190,9 +194,10 @@ public class CartServiceImpl implements CartService {
 	                return ps;
 	            });
 		     
+		     log.info("Updating product count in inventory");
 		     jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()-1)+"WHERE id="+requiredProduct.getId());
 		     }
-		     
+		     log.info("Cart adding process ended");
 		}
 
 	
@@ -294,8 +299,11 @@ public class CartServiceImpl implements CartService {
 	}
 	*/
 
+	//Method to remove a product from the cart
+	
 	@Override
-	public void removeProductFromCart(int id) throws CartException {
+	public void removeProductFromCart(int id) throws CartException, SQLException {
+		log.info("Remove particular product from cart process started");
 		List<Product> products =  jdbcTemplate.query(constants.FetchAllProductById+id, new ProductRowMapper());
 		if(products.isEmpty()) {
 			log.error("Error in updating product count in product table");
@@ -318,6 +326,7 @@ public class CartServiceImpl implements CartService {
 	     FetchedProductofCart = jdbcTemplate.query(constants.ExtractCartQuery+"'"+username+"'", new CartRowMapper());
 	     
 	     if(FetchedProductofCart.isEmpty()){
+	    	 log.error("Cart not found");
 	    	 throw new CartException("Cart not found");
 	     }
 	     
@@ -326,6 +335,7 @@ public class CartServiceImpl implements CartService {
 	    	 Cart oldCart = FetchedProductofCart.get(0);
 	    	 
 	    	 if(oldCart.getAllProductsInCart().isEmpty()){
+	    		 log.error("Cart is Empty");
 		    	 throw new CartException("Cart is Empty");
 		     }
 			 
@@ -376,17 +386,23 @@ public class CartServiceImpl implements CartService {
 	    	
 	    
 	    });
+	    	 
+	    	 log.info("Product with id : ".concat(String.valueOf(id)).concat(" is removed."));
      jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, updatedPrice);
 	        
 	        
+            log.info("Updating the product count in inventory");
 	     jdbcTemplate.update("UPDATE product SET stock="+(requiredProduct.getStock()+updatedProductCount)+"WHERE id="+id);
 
 	}
+	     log.info("Remove particular product from cart process Ended");
 	}
 
+	//Method to empty cart.
 
 	@Override
-	public void emptyCart() throws CartException {
+	public void emptyCart() throws CartException, SQLException {
+		log.info("Remove entire product from cart process started");
 		 Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 	     String username;
 	    BigDecimal emptyPrice = new BigDecimal("0.0");
@@ -397,7 +413,9 @@ public class CartServiceImpl implements CartService {
 	        username = principal.toString();
 	     }
 		String val = "";
+		log.info("Cart is made empty");
 		jdbcTemplate.update(constants.UpdateCartQuery+"'"+username+"'",val, emptyPrice);
+		log.info("Remove entire product from cart process ended");
 	}
 
 }

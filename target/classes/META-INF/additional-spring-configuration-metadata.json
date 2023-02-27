@@ -18,5 +18,25 @@
     "name": "gmail.spring.mail.properties.mail.smtp.auth",
     "type": "java.lang.String",
     "description": "A description for 'gmail.spring.mail.properties.mail.smtp.auth'"
+  },
+  {
+    "name": "db.class",
+    "type": "java.lang.String",
+    "description": "A description for 'db.class'"
+  },
+  {
+    "name": "db.url",
+    "type": "java.lang.String",
+    "description": "A description for 'db.url'"
+  },
+  {
+    "name": "db.username",
+    "type": "java.lang.String",
+    "description": "A description for 'db.username'"
+  },
+  {
+    "name": "db.password",
+    "type": "java.lang.String",
+    "description": "A description for 'db.password'"
   }
 ]}

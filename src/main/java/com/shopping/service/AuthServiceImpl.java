@@ -1,6 +1,7 @@
 package com.shopping.service;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,11 +16,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.shopping.AuthRowMapper;
+import org.springframework.util.CollectionUtils;
 import com.shopping.constants.Constants;
 import com.shopping.entity.Auth;
 import com.shopping.entity.Roles;
-import com.shopping.exception.AuthRequestException;
+import com.shopping.exception.AuthException;
+import com.shopping.rowmapper.AuthRowMapper;
 import net.bytebuddy.utility.RandomString;
 import java.util.Random;   
 
@@ -46,24 +48,24 @@ public class AuthServiceImpl implements AuthService {
 	
 	private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
+	//To register in the application
 	@Override
-	public void register(Auth auth,String siteURL) throws UnsupportedEncodingException, MessagingException{
+	public void register(Auth auth,String siteURL) throws UnsupportedEncodingException, MessagingException, AuthException, SQLException{
 			
 		Auth authCheck = findUserByEmail(auth);
 		
 		if(!(authCheck==null)) {
 			log.error(constants.EmailAlreadyExistsError);
-			throw new AuthRequestException(constants.EmailAlreadyExistsError);
+			throw new AuthException(constants.EmailAlreadyExistsError);
 		}
 		
 		
 		if(authCheck==null) {
 			
-	
 		if(auth.getPassword().length()<8)
 		{
 			log.error(constants.PasswordLengthERROR);
-		throw new AuthRequestException(constants.PasswordLengthERROR);
+		throw new AuthException(constants.PasswordLengthERROR);
 		}
 		
 		 String encodedPassword = passwordEncoder.encode(auth.getPassword());
@@ -82,8 +84,9 @@ public class AuthServiceImpl implements AuthService {
 		
 	}
 
+	//Method for logging in
 	@Override
-	public Boolean login(Auth auth) {
+	public Boolean login(Auth auth) throws SQLException {
 		
 		Auth authLogin = findUserByEmail(auth);
 		if(!(authLogin == null)) {
@@ -112,19 +115,21 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	
-	  public Auth findUserByEmail(Auth auth) {
+	//To fetch user by email
+	  public Auth findUserByEmail(Auth auth) throws SQLException {
 		  
 		  String eMailQuery = constants.EmailExtractQuery+"'"+auth.getEmail()+"'";
 		
 	 List<Auth> FetchedAuthObject = jdbcTemplate.query(eMailQuery, new AuthRowMapper());
 		  
-	 if(FetchedAuthObject.isEmpty()) {
+	 if(CollectionUtils.isEmpty(FetchedAuthObject)) {
 		return null;
 	 }
 		   return FetchedAuthObject.get(0); 
 		  
 		   }
 	  
+	  //To send the verfication email
 	  private void sendVerificationEmail(Auth auth, String siteURL)
 		        throws MessagingException, UnsupportedEncodingException {
 		    String toAddress = auth.getEmail();
@@ -141,7 +146,7 @@ public class AuthServiceImpl implements AuthService {
 		    helper.setSubject(subject);
 		     
 		    content = content.replace("[[name]]", auth.getFirstName()+" "+auth.getLastName());
-		   // localhost:8080/shoppingApp/auth/
+		   
 		    String verifyURL = siteURL + "/shoppingApp/auth/verify/"+auth.getEmail()+"?code=" + auth.getVerification_code();
 		     
 		    content = content.replace("[[URL]]", verifyURL);
@@ -152,6 +157,7 @@ public class AuthServiceImpl implements AuthService {
 		     
 		}
 	  
+	  //Verfication mail for merchant account.
 	  public void sendMerchantVerificationEmail(Auth auth, String siteURL)
 		        throws MessagingException, UnsupportedEncodingException {
 		    String toAddress = auth.getEmail();
@@ -179,11 +185,11 @@ public class AuthServiceImpl implements AuthService {
 		     
 		}
 	  
-	  public boolean verify(String verificationCode, String mail) {
+	  public boolean verify(String verificationCode, String mail) throws SQLException {
 		  
 		    List<Auth> FetchedObject = getAllAuth().stream().filter(auth1 -> auth1.getEmail().equals(mail)).collect(Collectors.toList());
 		    		
-		    if(FetchedObject.isEmpty()) {
+		    if(CollectionUtils.isEmpty(FetchedObject)) {
 		    	log.error("No account found with this email.");
 		    	return false;
 		    }
@@ -196,9 +202,7 @@ public class AuthServiceImpl implements AuthService {
 		    		int id = random.nextInt(100000);   
 		    		
 		    		jdbcTemplate.update(constants.DefaultRoleInsertQuery, new Object[] {id, oneUser.getEmail(), constants.DefaultRole});
-		    		//Roles role = new Roles("USER");
-		    		//roles.add(role);
-		    		//oneUser.setRoles(roles);
+		    		
 		    	  jdbcTemplate.update(constants.VerifyQuery+oneUser.getId());
 		          
 		        return true;
@@ -211,9 +215,9 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 	@Override
-	public List<Auth> getAllAuth() {
+	public List<Auth> getAllAuth() throws SQLException {
 		List<Auth> allusers =  jdbcTemplate.query(constants.FetchAllAuthQuery, new AuthRowMapper());
-		if(allusers.isEmpty()) {
+		if(CollectionUtils.isEmpty(allusers)) {
 			return null;
 		}
 		return allusers;
@@ -221,10 +225,10 @@ public class AuthServiceImpl implements AuthService {
 
 
 	@Override
-	public boolean merchantVerify(String verificationCode, String mail) {
+	public boolean merchantVerify(String verificationCode, String mail) throws SQLException{
 		 List<Auth> FetchedObject = getAllAuth().stream().filter(auth1 -> auth1.getEmail().equals(mail)).collect(Collectors.toList());
  		
-		    if(FetchedObject.isEmpty()) {
+		    if(CollectionUtils.isEmpty(FetchedObject)) {
 		    	log.error("No account found with this email.");
 		    	return false;
 		    }
@@ -237,9 +241,7 @@ public class AuthServiceImpl implements AuthService {
 		    		int id = random.nextInt(100000);   
 		    		
 		    		jdbcTemplate.update(constants.DefaultRoleInsertQuery, new Object[] {id, oneUser.getEmail(), constants.MerchantRole});
-		    		//Roles role = new Roles("USER");
-		    		//roles.add(role);
-		    		//oneUser.setRoles(roles);
+		    		
 		    	  jdbcTemplate.update(constants.VerifyQuery+oneUser.getId());
 		          
 		        return true;
@@ -251,12 +253,12 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public void merchantRegister(Auth auth, String siteURL) throws UnsupportedEncodingException, MessagingException {
+	public void merchantRegister(Auth auth, String siteURL) throws UnsupportedEncodingException, MessagingException, AuthException, SQLException {
            Auth authCheck = findUserByEmail(auth);
 		
 		if(!(authCheck==null)) {
 			log.error(constants.EmailAlreadyExistsError);
-			throw new AuthRequestException(constants.EmailAlreadyExistsError);
+			throw new AuthException(constants.EmailAlreadyExistsError);
 		}
 		
 		
@@ -266,7 +268,7 @@ public class AuthServiceImpl implements AuthService {
 		if(auth.getPassword().length()<8)
 		{
 			log.error(constants.PasswordLengthERROR);
-		throw new AuthRequestException(constants.PasswordLengthERROR);
+		throw new AuthException(constants.PasswordLengthERROR);
 		}
 		
 		 String encodedPassword = passwordEncoder.encode(auth.getPassword());

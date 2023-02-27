@@ -1,33 +1,14 @@
 package com.shopping.exception;
 
-import org.springframework.http.HttpStatus;
-
-public class AuthException {
+public class AuthException extends Exception{
 	
-private String errorMsg;
-	
-	private HttpStatus httpStatus;
-
-	public String getErrorMsg() {
-		return errorMsg;
+private static final long serialVersionUID = -2903268500100321707L;
+	/**
+	 * Parameterized constructor
+	 * @param message
+	 */
+	public AuthException(String message)
+	{
+		super(message);
 	}
-
-	public void setErrorMsg(String errorMsg) {
-		this.errorMsg = errorMsg;
-	}
-
-	public HttpStatus getHttpStatus() {
-		return httpStatus;
-	}
-
-	public void setHttpStatus(HttpStatus httpStatus) {
-		this.httpStatus = httpStatus;
-	}
-
-	public AuthException(String errorMsg) {
-		super();
-		this.errorMsg = errorMsg;
-	//	this.httpStatus = httpStatus;
-	}	
-
 }

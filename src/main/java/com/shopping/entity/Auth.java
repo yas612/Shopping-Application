@@ -2,15 +2,19 @@ package com.shopping.entity;
 
 import java.util.HashSet;
 import java.util.Set;
-
-import java.util.*;
-
-import javax.management.relation.Role;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
+@NoArgsConstructor
+@ToString
 @Entity
+@Getter
+@Setter
 @Table(name = "Auth")
 public class Auth {
 	
@@ -47,68 +51,6 @@ public class Auth {
             )
     private Set<Roles> roles = new HashSet<>();
 	
-
-	public Auth() {
-		super();
-	
-	}
-
-
-	public int getId() {
-		return id;
-	}
-
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-
-	public String getLastName() {
-		return lastName;
-	}
-
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
-
-	public String getPassword() {
-		return password;
-	}
-
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-
-	public String getEmail() {
-		return email;
-	}
-
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-
-	public String getVerification_code() {
-		return verification_code;
-	}
-
-
 	public void setVerification_code(String verification_code) {
 		this.verification_code = verification_code;
 	}
@@ -116,23 +58,6 @@ public class Auth {
 
 	public boolean isValid() {
 		return isValid;
-	}
-
-
-	public void setValid(boolean isValid) {
-		this.isValid = isValid;
-	}
-	
-	
-
-
-	public Set<Roles> getRoles() {
-		return roles;
-	}
-
-
-	public void setRoles(Set<Roles> roles) {
-		this.roles = roles;
 	}
 
 
@@ -147,10 +72,6 @@ public class Auth {
 		this.verification_code = verification_code;
 		this.isValid = isValid;
 	}
-	
-	
-	
-
 
 	public Auth(int id, String firstName, String lastName, String password,
 			@Email(message = "Email is not valid", regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}") @NotEmpty(message = "Email cannot be empty") String email,
@@ -173,17 +94,5 @@ public class Auth {
 		this.password = password;
 		this.email = email;
 	}
-
-
-	@Override
-	public String toString() {
-		return "Auth [id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", password=" + password
-				+ ", email=" + email + ", verification_code=" + verification_code + ", isValid=" + isValid + "]";
-	}
-
-
-	
-	
-	
 	
 }

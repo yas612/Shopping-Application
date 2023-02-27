@@ -21,14 +21,24 @@ public class Constants {
    public final String AddToCartQuery = "INSERT INTO cart(username, products, total) VALUES (?,?,?)";
    public final String ExtractCartQuery = "SELECT * FROM cart WHERE username=";
    public final String UpdateCartQuery = "UPDATE cart SET products =?, total=? WHERE username=";
+   public final String FetchPriceFromCartQuery = "SELECT * from cart WHERE username=";
    public final String UpdateProductStockQuery = "UPDATE product SET stock=? WHERE id=";
    public final String DefaultRoleInsertQuery = "INSERT INTO userauthority(id, email, authority) VALUES(?,?,?)";
+   public final String EmptyCartQuery = "DELETE FROM cart WHERE username =?";
+   public final String SuccessFulPaymentInsertQuery = "INSERT INTO payment(paymentid, email, paymentdate, amount, status) VALUES(?,?,?,?,?)";
+   public final String FailurePaymentInsertQuery = "INSERT INTO payment(paymentid, email, paymentdate, amount, status) VALUES(?,?,?,?,?)";
    public final String DefaultRole = "USER";
    public final String MerchantRole = "MERCHANT";
+   public final String paymentReceiptLoc = "C:\\Users\\MOHOLI\\Downloads\\paymentReceipt\\";
+   public final String dbConfigLoc = "C:\\Users\\MOHOLI\\Downloads\\paymentReceipt\\DBProperties\\";
+   public final String dbConfigFileName = "db.properties";
    public final String ExtractuserRolesQuery = "SELECT * FROM user_roles";
    public final String RoleExtractionQuery = "SELECT * FROM role";
    public final String UserVerifyQuery = "SELECT email, password , valid from auth WHERE email =?";
    public final String AuthorityVerifyQuery = "SELECT email, authority from userauthority WHERE email =?";
+   public final String InsertOrderQuery = "INSERT INTO orders(orderid, email, products, status) VALUES(?,?,?,?)";
+   public final String FetchAllOrderQuery = "SELECT * FROM orders WHERE email =";
+   public final String CancelOrderByIdQuery = "UPDATE orders SET status=? WHERE email=? AND orderid =?";
    public String roleQuery = "SELECT Customers.customer_id, Customers.first_name, Orders.amount"
                               +"FROM Customers"
 		                      +"LEFT JOIN Orders"
@@ -39,6 +49,20 @@ public class Constants {
            + "<h3><a href=\"[[URL]]\" target=\"_self\">VERIFY</a></h3>"
            + "Thank you,<br>"
            + "Shopping Application.";
+   public String PaymentVerifymailContent = "Dear [[email]],<br>"
+           + "A payment has been initiated for the sum of [[price]] rupees"
+           + " Please proceed with the payment option by verifying here.<br>"
+           + "<h3><a href=\"[[paymentOK]]\" target=\"_self\">YES</a></h3>"
+           +" "
+           +"<h3><a href=\"[[paymentNOTOK]]\" target=\"_self\">NO</a></h3>"
+           + "Thank you,<br>"
+           + "Shopping Application.";
+   public String paymentReceiptMailContent = "Dear [[name]],<br>"
+           + "Please find the payment receipt attached with this email<br>"
+           + "Thank you,<br>"
+           + "Shopping Application.";
+   public final String paymentOKURL = "http://localhost:8080/shoppingApp/payment/ack/yes";
+   public final String paymentNOTOKURL = "http://localhost:8080/shoppingApp/payment/ack/no";
    public final String Separator = "|";
    
 }
